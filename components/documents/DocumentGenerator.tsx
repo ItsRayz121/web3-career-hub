@@ -5,7 +5,8 @@ import Input from '@/components/ui/Input'
 import Textarea from '@/components/ui/Textarea'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
-import { createClient } from '@/lib/supabase/client'
+import { addDocument, getFullProfile } from '@/lib/storage'
+import type { PromptTemplate } from '@/lib/prompt-templates'
 import toast from 'react-hot-toast'
 import { Sparkles, Save, Copy, AlertCircle, CheckCircle, RefreshCw, Pencil, Check } from 'lucide-react'
 
@@ -13,7 +14,7 @@ interface Props {
   type: 'cv' | 'resume' | 'cover_letter'
   title: string
   description: string
-  prompts: { id: string; name: string; description: string; prompt: string; tone: string }[]
+  prompts: PromptTemplate[]
   initialJobTitle?: string
   initialCompanyName?: string
   initialJobDescription?: string
@@ -50,8 +51,6 @@ export default function DocumentGenerator({ type, title, description, prompts, i
   const [aiResult, setAiResult] = useState<AiResult | null>(null)
   const [editMode, setEditMode] = useState(false)
 
-  const supabase = createClient()
-
   const generate = async () => {
     setGenerating(true)
     setContent('')
@@ -59,12 +58,13 @@ export default function DocumentGenerator({ type, title, description, prompts, i
 
     const selectedP = prompts.find(p => p.id === selectedPrompt)
     const customPrompt = selectedP?.prompt || ''
+    const profileData = getFullProfile()
 
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, jobTitle, jobDescription, companyName, tone: selectedP?.tone || tone, customPrompt }),
+        body: JSON.stringify({ type, jobTitle, jobDescription, companyName, tone: selectedP?.tone || tone, customPrompt, profileData }),
       })
 
       if (!res.ok) {
@@ -109,14 +109,10 @@ export default function DocumentGenerator({ type, title, description, prompts, i
     setChecking(false)
   }
 
-  const saveDocument = async () => {
+  const saveDocument = () => {
     if (!content) return toast.error('Nothing to save')
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    const { error } = await supabase.from('generated_documents').insert({
-      user_id: user.id,
+    addDocument({
       type,
       title: docTitle || `${type} - ${new Date().toLocaleDateString()}`,
       content,
@@ -125,9 +121,7 @@ export default function DocumentGenerator({ type, title, description, prompts, i
       tone,
       ai_score: aiResult?.ai_score,
     })
-
-    if (error) toast.error('Failed to save')
-    else toast.success('Saved to your documents!')
+    toast.success('Saved to your documents!')
     setSaving(false)
   }
 
@@ -156,7 +150,6 @@ export default function DocumentGenerator({ type, title, description, prompts, i
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left: Configuration */}
         <div className="space-y-4">
           <Card>
             <h2 className="font-semibold text-white mb-4">Target Job (Optional)</h2>
@@ -174,15 +167,8 @@ export default function DocumentGenerator({ type, title, description, prompts, i
                 <label className="text-sm font-medium text-[#8888aa] block mb-2">Tone</label>
                 <div className="flex flex-wrap gap-2">
                   {tones.map(t => (
-                    <button
-                      key={t.value}
-                      onClick={() => setTone(t.value)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        tone === t.value
-                          ? 'bg-[#6c63ff] text-white'
-                          : 'bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35]'
-                      }`}
-                    >
+                    <button key={t.value} onClick={() => setTone(t.value)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${tone === t.value ? 'bg-[#6c63ff] text-white' : 'bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35]'}`}>
                       {t.label}
                     </button>
                   ))}
@@ -193,26 +179,13 @@ export default function DocumentGenerator({ type, title, description, prompts, i
                 <div>
                   <label className="text-sm font-medium text-[#8888aa] block mb-2">Prompt Template (Optional)</label>
                   <div className="space-y-2">
-                    <button
-                      onClick={() => setSelectedPrompt('')}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all border ${
-                        selectedPrompt === ''
-                          ? 'bg-[#6c63ff15] border-[#6c63ff40] text-white'
-                          : 'bg-[#0f0f1a] border-[#1e1e35] text-[#8888aa] hover:text-white'
-                      }`}
-                    >
+                    <button onClick={() => setSelectedPrompt('')}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all border ${selectedPrompt === '' ? 'bg-[#6c63ff15] border-[#6c63ff40] text-white' : 'bg-[#0f0f1a] border-[#1e1e35] text-[#8888aa] hover:text-white'}`}>
                       Default (no special prompt)
                     </button>
                     {prompts.map(p => (
-                      <button
-                        key={p.id}
-                        onClick={() => setSelectedPrompt(p.id)}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all border ${
-                          selectedPrompt === p.id
-                            ? 'bg-[#6c63ff15] border-[#6c63ff40] text-white'
-                            : 'bg-[#0f0f1a] border-[#1e1e35] text-[#8888aa] hover:text-white'
-                        }`}
-                      >
+                      <button key={p.id} onClick={() => setSelectedPrompt(p.id)}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all border ${selectedPrompt === p.id ? 'bg-[#6c63ff15] border-[#6c63ff40] text-white' : 'bg-[#0f0f1a] border-[#1e1e35] text-[#8888aa] hover:text-white'}`}>
                         <p className="font-medium">{p.name}</p>
                         <p className="text-xs text-[#555577] mt-0.5">{p.description}</p>
                       </button>
@@ -228,7 +201,6 @@ export default function DocumentGenerator({ type, title, description, prompts, i
           </Button>
         </div>
 
-        {/* Right: Output */}
         <div className="space-y-4">
           {content && (
             <>
@@ -260,14 +232,11 @@ export default function DocumentGenerator({ type, title, description, prompts, i
                       onChange={e => setContent(e.target.value)}
                     />
                   ) : (
-                    <pre className="text-sm text-[#d0d0ee] whitespace-pre-wrap font-sans leading-relaxed">
-                      {content}
-                    </pre>
+                    <pre className="text-sm text-[#d0d0ee] whitespace-pre-wrap font-sans leading-relaxed">{content}</pre>
                   )}
                 </div>
               </Card>
 
-              {/* AI Detection */}
               <Card>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-medium text-white text-sm">AI Detection Check</h3>
@@ -276,9 +245,7 @@ export default function DocumentGenerator({ type, title, description, prompts, i
                   </Button>
                 </div>
 
-                {!aiResult && (
-                  <p className="text-xs text-[#555577]">Click &quot;Check&quot; to verify this sounds human-written</p>
-                )}
+                {!aiResult && <p className="text-xs text-[#555577]">Click &quot;Check&quot; to verify this sounds human-written</p>}
 
                 {aiResult && (
                   <div className="space-y-3">
@@ -291,35 +258,26 @@ export default function DocumentGenerator({ type, title, description, prompts, i
                         <span className="text-sm font-medium text-white">{aiResult.verdict}</span>
                       </div>
                       <Badge variant={getScoreVariant(aiResult.ai_score)}>
-                        <span className={getScoreColor(aiResult.ai_score)}>
-                          {aiResult.ai_score}% AI
-                        </span>
+                        <span className={getScoreColor(aiResult.ai_score)}>{aiResult.ai_score}% AI</span>
                       </Badge>
                     </div>
-
                     <p className="text-xs text-[#8888aa]">{aiResult.summary}</p>
-
                     {aiResult.flagged_phrases?.length > 0 && (
                       <div>
                         <p className="text-xs font-medium text-[#8888aa] mb-1">Flagged phrases:</p>
                         <div className="flex flex-wrap gap-1">
                           {aiResult.flagged_phrases.map((p, i) => (
-                            <span key={i} className="text-xs bg-red-900/30 text-red-400 border border-red-900/50 px-2 py-0.5 rounded">
-                              {p}
-                            </span>
+                            <span key={i} className="text-xs bg-red-900/30 text-red-400 border border-red-900/50 px-2 py-0.5 rounded">{p}</span>
                           ))}
                         </div>
                       </div>
                     )}
-
                     {aiResult.suggestions?.length > 0 && (
                       <div>
                         <p className="text-xs font-medium text-[#8888aa] mb-1">Suggestions:</p>
                         <ul className="space-y-1">
                           {aiResult.suggestions.map((s, i) => (
-                            <li key={i} className="text-xs text-[#8888aa] flex gap-1.5">
-                              <span className="text-[#6c63ff] mt-0.5">•</span>{s}
-                            </li>
+                            <li key={i} className="text-xs text-[#8888aa] flex gap-1.5"><span className="text-[#6c63ff] mt-0.5">•</span>{s}</li>
                           ))}
                         </ul>
                       </div>

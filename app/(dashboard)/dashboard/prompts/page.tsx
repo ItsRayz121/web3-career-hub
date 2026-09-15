@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { PROMPT_TEMPLATES } from '@/lib/prompt-templates'
 import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Link from 'next/link'
@@ -12,7 +12,7 @@ const categoryColors: Record<string, 'info' | 'success' | 'warning' | 'purple'> 
 }
 
 const categoryLabels: Record<string, string> = {
-  cv: 'CV', resume: 'Resume', cover_letter: 'Cover Letter', linkedin: 'LinkedIn', ats: 'ATS',
+  cv: 'CV', resume: 'Resume', cover_letter: 'Cover Letter', linkedin: 'LinkedIn',
 }
 
 const categoryLinks: Record<string, string> = {
@@ -21,14 +21,10 @@ const categoryLinks: Record<string, string> = {
   cover_letter: '/dashboard/cover-letter',
 }
 
-export default async function PromptsPage() {
-  const supabase = await createClient()
-  const { data: prompts } = await supabase.from('prompt_templates').select('*').order('category')
-
-  const grouped = (prompts || []).reduce((acc: Record<string, typeof prompts>, p) => {
-    if (!p) return acc
+export default function PromptsPage() {
+  const grouped = PROMPT_TEMPLATES.reduce((acc: Record<string, typeof PROMPT_TEMPLATES>, p) => {
     if (!acc[p.category]) acc[p.category] = []
-    acc[p.category]!.push(p)
+    acc[p.category].push(p)
     return acc
   }, {})
 
@@ -44,7 +40,7 @@ export default async function PromptsPage() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Badge variant={categoryColors[category] || 'default'}>{categoryLabels[category] || category}</Badge>
-              <span className="text-xs text-[#555577]">{items?.length} prompts</span>
+              <span className="text-xs text-[#555577]">{items.length} prompts</span>
             </div>
             {categoryLinks[category] && (
               <Link href={categoryLinks[category]} className="text-xs text-[#6c63ff] hover:underline flex items-center gap-1">
@@ -52,24 +48,23 @@ export default async function PromptsPage() {
               </Link>
             )}
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {(items || []).map((prompt) => (
-              <Card key={prompt?.id} hover>
+            {items.map(prompt => (
+              <Card key={prompt.id} hover>
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg bg-[#6c63ff20] flex items-center justify-center shrink-0 mt-0.5">
                     <Sparkles size={14} className="text-[#6c63ff]" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <p className="font-medium text-white text-sm">{prompt?.name}</p>
+                      <p className="font-medium text-white text-sm">{prompt.name}</p>
                       <span className="text-xs bg-[#1a1a2e] text-[#8888aa] px-2 py-0.5 rounded border border-[#1e1e35] capitalize">
-                        {prompt?.tone}
+                        {prompt.tone}
                       </span>
                     </div>
-                    <p className="text-xs text-[#8888aa]">{prompt?.description}</p>
+                    <p className="text-xs text-[#8888aa]">{prompt.description}</p>
                     <div className="mt-2 bg-[#0f0f1a] rounded-lg p-2 border border-[#1e1e35]">
-                      <p className="text-xs text-[#555577] italic line-clamp-2">{prompt?.prompt?.slice(0, 120)}...</p>
+                      <p className="text-xs text-[#555577] italic line-clamp-2">{prompt.prompt.slice(0, 120)}...</p>
                     </div>
                   </div>
                 </div>
@@ -78,13 +73,6 @@ export default async function PromptsPage() {
           </div>
         </div>
       ))}
-
-      {(!prompts || prompts.length === 0) && (
-        <Card className="text-center py-12">
-          <Sparkles size={32} className="text-[#555577] mx-auto mb-3" />
-          <p className="text-sm text-[#555577]">No prompts loaded. Make sure to run the database schema first.</p>
-        </Card>
-      )}
     </div>
   )
 }

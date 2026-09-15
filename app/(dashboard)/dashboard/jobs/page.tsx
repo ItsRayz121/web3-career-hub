@@ -5,7 +5,7 @@ import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import { Briefcase, Search, Bookmark, RefreshCw, MapPin, Clock, DollarSign, Mail, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import { addOpportunity, getOpportunities } from '@/lib/storage'
 import toast from 'react-hot-toast'
 
 interface Job {
@@ -25,6 +25,7 @@ interface Job {
 
 const filters = [
   { value: 'all', label: 'All Jobs' },
+  { value: 'telegram', label: '📣 Telegram' },
   { value: 'remote', label: 'Remote' },
   { value: 'freelance', label: 'Freelance' },
   { value: 'hybrid', label: 'Hybrid' },
@@ -67,7 +68,7 @@ export default function JobsPage() {
   const [keyword, setKeyword] = useState('')
   const [search, setSearch] = useState('')
   const [saving, setSaving] = useState<string | null>(null)
-  const supabase = createClient()
+  const [savedIds, setSavedIds] = useState<Set<string>>(() => new Set(getOpportunities().map(o => o.opportunity_id)))
 
   const fetchJobs = useCallback(async () => {
     setLoading(true)
@@ -86,22 +87,12 @@ export default function JobsPage() {
 
   useEffect(() => { fetchJobs() }, [fetchJobs])
 
-  const saveJob = async (job: Job) => {
+  const saveJob = (job: Job) => {
+    if (savedIds.has(job.id)) return
     setSaving(job.id)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { error } = await supabase.from('saved_opportunities').insert({
-      user_id: user.id,
-      opportunity_id: job.id,
-      opportunity_type: 'job',
-      title: job.title,
-      company: job.company,
-      url: job.apply_url,
-      status: 'saved',
-      priority: 'medium',
-    })
-    if (error && error.code !== '23505') toast.error('Failed to save')
-    else toast.success('Job saved to tracker!')
+    addOpportunity({ opportunity_id: job.id, opportunity_type: 'job', title: job.title, company: job.company, url: job.apply_url, status: 'saved', priority: 'medium' })
+    setSavedIds(prev => new Set([...prev, job.id]))
+    toast.success('Job saved to tracker!')
     setSaving(null)
   }
 
@@ -231,9 +222,9 @@ export default function JobsPage() {
                   </Link>
                   <button
                     onClick={() => saveJob(job)}
-                    disabled={saving === job.id}
-                    className="px-3 py-2 rounded-lg bg-[#1a1a2e] hover:bg-[#222240] text-[#8888aa] hover:text-white border border-[#1e1e35] transition-colors disabled:opacity-50"
-                    title="Save to tracker"
+                    disabled={saving === job.id || savedIds.has(job.id)}
+                    className={`px-3 py-2 rounded-lg border transition-colors disabled:opacity-50 ${savedIds.has(job.id) ? 'bg-[#6c63ff20] border-[#6c63ff40] text-[#6c63ff]' : 'bg-[#1a1a2e] hover:bg-[#222240] text-[#8888aa] hover:text-white border-[#1e1e35]'}`}
+                    title={savedIds.has(job.id) ? 'Already saved' : 'Save to tracker'}
                   >
                     <Bookmark size={14} />
                   </button>

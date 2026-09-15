@@ -1,27 +1,29 @@
-import { createClient } from '@/lib/supabase/server'
+'use client'
+import { Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import DocumentGenerator from '@/components/documents/DocumentGenerator'
+import { PROMPT_TEMPLATES } from '@/lib/prompt-templates'
 
-export default async function CoverLetterPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ job?: string; company?: string; desc?: string }>
-}) {
-  const params = await searchParams
-  const supabase = await createClient()
-  const { data: prompts } = await supabase
-    .from('prompt_templates')
-    .select('*')
-    .eq('category', 'cover_letter')
-
+function CoverLetterContent() {
+  const params = useSearchParams()
+  const prompts = PROMPT_TEMPLATES.filter(p => p.category === 'cover_letter')
   return (
     <DocumentGenerator
       type="cover_letter"
       title="Cover Letter Maker"
       description="Write personalized, human-quality cover letters tailored to each company and role"
-      prompts={(prompts || []).map(p => ({ id: p.id, name: p.name, description: p.description, prompt: p.prompt, tone: p.tone }))}
-      initialJobTitle={params.job || ''}
-      initialCompanyName={params.company || ''}
-      initialJobDescription={params.desc || ''}
+      prompts={prompts}
+      initialJobTitle={params.get('job') || ''}
+      initialCompanyName={params.get('company') || ''}
+      initialJobDescription={params.get('desc') || ''}
     />
+  )
+}
+
+export default function CoverLetterPage() {
+  return (
+    <Suspense fallback={null}>
+      <CoverLetterContent />
+    </Suspense>
   )
 }

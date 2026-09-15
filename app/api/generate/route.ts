@@ -1,32 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { createClient } from '@/lib/supabase/server'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { type, jobTitle, jobDescription, companyName, tone, customPrompt, profileData } = await req.json()
 
-  const { type, jobTitle, jobDescription, companyName, tone, customPrompt } = await req.json()
-
-  // Fetch all user data
-  const [pRes, eRes, edRes, sRes, cRes, prRes] = await Promise.all([
-    supabase.from('profiles').select('*').eq('user_id', user.id).single(),
-    supabase.from('experiences').select('*').eq('user_id', user.id),
-    supabase.from('education').select('*').eq('user_id', user.id),
-    supabase.from('skills').select('*').eq('user_id', user.id),
-    supabase.from('certifications').select('*').eq('user_id', user.id),
-    supabase.from('projects').select('*').eq('user_id', user.id),
-  ])
-
-  const profile = pRes.data
-  const experiences = eRes.data || []
-  const education = edRes.data || []
-  const skills = sRes.data || []
-  const certifications = cRes.data || []
-  const projects = prRes.data || []
+  const { profile, experiences = [], education = [], skills = [], certifications = [], projects = [] } = profileData || {}
 
   if (!profile?.full_name) {
     return NextResponse.json({ error: 'Please complete your profile before generating documents' }, { status: 400 })
@@ -54,7 +34,7 @@ ${experiences.map((e: Record<string, unknown>) => `
   Location: ${e.location}
   Responsibilities: ${e.responsibilities}
   Achievements: ${e.achievements}
-  Tools: ${Array.isArray(e.tools_used) ? (e.tools_used as string[]).join(', ') : e.tools_used}
+  Tools: ${e.tools_used}
 `).join('')}
 
 EDUCATION:

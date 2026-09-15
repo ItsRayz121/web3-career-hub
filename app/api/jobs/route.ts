@@ -410,6 +410,176 @@ async function parseWeb3Career(): Promise<JobItem[]> {
   }
 }
 
+async function parseReliefWebPakistan(): Promise<JobItem[]> {
+  try {
+    const res = await fetch('https://reliefweb.int/jobs/rss.xml?search=country%3A%22Pakistan%22', {
+      headers: { 'User-Agent': 'Web3CareerHub/1.0' },
+      next: { revalidate: 900 },
+    })
+    const text = await res.text()
+    if (!text.includes('<item>')) return []
+    const items = text.match(/<item>([\s\S]*?)<\/item>/g) || []
+    return items.slice(0, 50).map((item, idx) => {
+      const title = extractXml(item, 'title')
+      const link = extractXml(item, 'link')
+      const pubDate = extractXml(item, 'pubDate')
+      const rawDesc = extractXml(item, 'description')
+      const desc = rawDesc
+        .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#0?39;/g, "'")
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+      const orgMatch = rawDesc.match(/Organization:\s*([^&<]+)/)
+      const company = orgMatch ? orgMatch[1].trim() : 'NGO / Development Org'
+      return {
+        id: `reliefweb_${idx}_${Date.now()}`,
+        title,
+        company,
+        location: 'Pakistan',
+        work_type: detectWorkType(title, desc, 'onsite'),
+        description: desc.slice(0, 300),
+        skills: extractSkillsFromText(title + ' ' + desc),
+        posted_date: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(),
+        source: 'ReliefWeb',
+        apply_url: link,
+        sector: 'general',
+        salary: '',
+      }
+    })
+  } catch {
+    return []
+  }
+}
+
+async function parseJoobleJobs(): Promise<JobItem[]> {
+  const apiKey = process.env.JOOBLE_API_KEY
+  if (!apiKey) return []
+  try {
+    const res = await fetch(`https://pk.jooble.org/api/${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keywords: '', location: 'Pakistan' }),
+      // 24h cache — Jooble's free key has a 500-lifetime-request cap, not a monthly one
+      next: { revalidate: 86400 },
+    })
+    if (!res.ok) return []
+    const data = await res.json()
+    const jobs: Record<string, unknown>[] = Array.isArray(data.jobs) ? data.jobs : []
+    return jobs.map((j) => {
+      const title = String(j.title || '')
+      const desc = String(j.snippet || '').replace(/\s+/g, ' ').trim().slice(0, 300)
+      const location = String(j.location || 'Pakistan')
+      return {
+        id: `jooble_${j.id}`,
+        title,
+        company: String(j.company || 'Company'),
+        location,
+        work_type: detectWorkType(title, desc, /remote/i.test(location) ? 'remote' : 'onsite'),
+        description: desc,
+        skills: extractSkillsFromText(title + ' ' + desc),
+        posted_date: j.updated ? new Date(String(j.updated)).toISOString() : new Date().toISOString(),
+        source: 'Jooble',
+        apply_url: String(j.link || ''),
+        sector: detectSector(title, []),
+        salary: j.salary ? String(j.salary) : '',
+      }
+    })
+  } catch {
+    return []
+  }
+}
+
+// ── Telegram Job Channels (scraped directly from t.me/s/ — verified public) ───
+// RSSHub was blocked (403). t.me/s/{channel} is Telegram's own public preview,
+// always works for channels with public preview enabled.
+
+const TELEGRAM_JOB_CHANNELS = [
+  { username: 'cryptojobslist',   label: 'CryptoJobsList'    },
+  { username: 'DeFiJobs',         label: 'DeFi Jobs'         },
+  { username: 'CryptoDevJobs',    label: 'Crypto Dev Jobs'   },
+  { username: 'web3hiring',       label: 'Web3 Hiring'       },
+  { username: 'cryptodevjobs',    label: 'Crypto Dev Jobs 2' },
+  { username: 'remotecryptojobs', label: 'Remote Crypto Jobs'},
+]
+
+// Extract plain text from Telegram HTML message content
+function stripTelegramHtml(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+async function parseTelegramChannel(username: string, label: string): Promise<JobItem[]> {
+  try {
+    const res = await fetch(`https://t.me/s/${username}`, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Web3CareerHub/1.0)' },
+      next: { revalidate: 900 },
+    })
+    if (!res.ok) return []
+    const html = await res.text()
+
+    // Extract all message text blocks
+    const textBlocks = [...html.matchAll(/class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/g)]
+    const dateBlocks = [...html.matchAll(/datetime="([^"]+)"/g)]
+    const urlBlocks  = [...html.matchAll(/href="(https:\/\/t\.me\/[a-zA-Z0-9_]+\/\d+)"/g)]
+
+    const jobs: JobItem[] = []
+
+    for (let i = 0; i < textBlocks.length; i++) {
+      const rawHtml = textBlocks[i][1]
+      const text    = stripTelegramHtml(rawHtml)
+      if (text.length < 30) continue
+
+      const date = dateBlocks[i]?.[ 1] || new Date().toISOString()
+      const url  = urlBlocks[i]?.[1] || `https://t.me/${username}`
+
+      // These ARE job channels — include all posts that have any job signal
+      // (looser filter than general channels, since the channel itself is a job board)
+      const JOB_SIGNALS = [
+        /\bhiring\b/i, /\blooking for\b/i, /\bjob\b/i, /\bposition\b/i,
+        /\brole\b/i, /\bvacancy\b/i, /\bopening\b/i, /\bremote\b/i,
+        /\bapply\b/i, /\bsalary\b/i, /\bcompensation\b/i, /\b(cv|resume)\b/i,
+        /\b(developer|engineer|designer|manager|analyst|marketer)\b/i,
+        /\b(solidity|blockchain|web3|defi|nft|crypto|token)\b/i,
+        /\$\d+/i, /\d+k\s*(usd|\/mo)/i,
+      ]
+      if (!JOB_SIGNALS.some(p => p.test(text))) continue
+
+      // Use first non-emoji line as title
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 5)
+      const title = lines[0]?.slice(0, 100) || label
+
+      jobs.push({
+        id: `tg_${username}_${url.split('/').pop()}`,
+        title,
+        company: extractCompanyFromTitle(title) || label,
+        location: 'Remote',
+        work_type: detectWorkType(title, text, 'remote'),
+        description: text.slice(0, 350),
+        skills: extractSkillsFromText(text),
+        posted_date: new Date(date).toISOString(),
+        source: `Telegram · ${label}`,
+        apply_url: url,
+        sector: detectSector(title, extractSkillsFromText(text)),
+        salary: '',
+      })
+    }
+    return jobs
+  } catch {
+    return []
+  }
+}
+
+async function parseTelegramJobs(): Promise<JobItem[]> {
+  const results = await Promise.allSettled(
+    TELEGRAM_JOB_CHANNELS.map(ch => parseTelegramChannel(ch.username, ch.label))
+  )
+  return results.flatMap(r => r.status === 'fulfilled' ? r.value : [])
+}
+
 // ── GET Handler ───────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
@@ -428,6 +598,9 @@ export async function GET(req: NextRequest) {
     parseFreelancer(),
     parseHimalayas(),
     parseWeb3Career(),
+    parseReliefWebPakistan(),
+    parseJoobleJobs(),
+    parseTelegramJobs(),
   ])
 
   let jobs: JobItem[] = results.flatMap(r => r.status === 'fulfilled' ? r.value : [])
@@ -442,7 +615,9 @@ export async function GET(req: NextRequest) {
   })
 
   // Filter
-  if (filter === 'freelance') {
+  if (filter === 'telegram') {
+    jobs = jobs.filter(j => j.source.startsWith('Telegram'))
+  } else if (filter === 'freelance') {
     jobs = jobs.filter(j => j.work_type === 'freelance')
   } else if (filter === 'pakistan') {
     jobs = jobs.filter(j => j.location.toLowerCase().includes('pakistan'))

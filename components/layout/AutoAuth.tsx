@@ -1,16 +1,4 @@
-'use client'
-import { useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
-
+// Auth removed — personal-use app with no login required
 export default function AutoAuth() {
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        supabase.auth.signInAnonymously()
-      }
-    })
-  }, [])
-
   return null
 }

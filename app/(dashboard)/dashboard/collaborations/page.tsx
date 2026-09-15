@@ -4,7 +4,7 @@ import Card from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import { Handshake, ExternalLink, RefreshCw, Bookmark, Globe } from 'lucide-react'
 import Button from '@/components/ui/Button'
-import { createClient } from '@/lib/supabase/client'
+import { addOpportunity } from '@/lib/storage'
 import toast from 'react-hot-toast'
 import { formatDate } from '@/lib/utils'
 
@@ -123,40 +123,14 @@ const curatedPrograms: CollabItem[] = [
 
 async function fetchLiveCollabs(): Promise<CollabItem[]> {
   try {
-    const res = await fetch('/api/jobs?sector=blockchain&keyword=ambassador')
+    const res = await fetch('/api/collabs')
     const data = await res.json()
-    const collabKeywords = ['ambassador', 'community', 'partnership', 'collaboration', 'growth', 'advocate', 'moderator', 'kol', 'creator', 'influencer']
-    return (data.jobs || [])
-      .filter((j: { title: string; description: string }) =>
-        collabKeywords.some(k => j.title.toLowerCase().includes(k) || j.description.toLowerCase().includes(k))
-      )
-      .map((j: { id: string; title: string; company: string; sector: string; description: string; apply_url: string; source: string; posted_date: string; skills: string[] }) => ({
-        id: j.id,
-        title: j.title,
-        organization: j.company,
-        type: detectCollabType(j.title),
-        description: j.description,
-        apply_url: j.apply_url,
-        source: j.source,
-        posted_date: j.posted_date,
-        tags: j.skills,
-        curated: false,
-      }))
+    return (data.collabs || []).map((c: CollabItem) => ({ ...c, curated: false }))
   } catch {
     return []
   }
 }
 
-function detectCollabType(title: string): string {
-  const t = title.toLowerCase()
-  if (t.includes('ambassador')) return 'Ambassador'
-  if (t.includes('community')) return 'Community'
-  if (t.includes('partnership') || t.includes('partner')) return 'Partnership'
-  if (t.includes('moderator')) return 'Moderator'
-  if (t.includes('creator') || t.includes('content')) return 'Content Creator'
-  if (t.includes('kol') || t.includes('influencer')) return 'KOL'
-  return 'Collaboration'
-}
 
 const typeColors: Record<string, 'purple' | 'info' | 'success' | 'warning'> = {
   Ambassador: 'purple',
@@ -172,8 +146,6 @@ export default function CollaborationsPage() {
   const [loading, setLoading] = useState(true)
   const [filterType, setFilterType] = useState('all')
   const [tab, setTab] = useState<'curated' | 'live'>('curated')
-  const supabase = createClient()
-
   const load = useCallback(async () => {
     setLoading(true)
     try {
@@ -185,13 +157,8 @@ export default function CollaborationsPage() {
 
   useEffect(() => { load() }, [load])
 
-  const saveItem = async (item: CollabItem) => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    await supabase.from('saved_opportunities').insert({
-      user_id: user.id, opportunity_id: item.id, opportunity_type: 'collaboration',
-      title: item.title, company: item.organization, url: item.apply_url, status: 'saved', priority: 'medium',
-    })
+  const saveItem = (item: CollabItem) => {
+    addOpportunity({ opportunity_id: item.id, opportunity_type: 'collaboration', title: item.title, company: item.organization, url: item.apply_url, status: 'saved', priority: 'medium' })
     toast.success('Saved to tracker!')
   }
 
