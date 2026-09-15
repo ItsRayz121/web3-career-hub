@@ -101,7 +101,7 @@ export default function JobsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Jobs</h1>
-          <p className="text-[#8888aa] text-sm mt-1">Live opportunities from 10 global sources — remote, freelance, Pakistan &amp; worldwide</p>
+          <p className="text-[#8888aa] text-sm mt-1">Live opportunities from 17 global sources — remote, freelance, Pakistan &amp; worldwide</p>
         </div>
         <Button variant="secondary" size="sm" onClick={fetchJobs}>
           <RefreshCw size={14} /> Refresh
@@ -162,7 +162,7 @@ export default function JobsPage() {
         </Card>
       ) : (
         <>
-          <p className="text-xs text-[#555577]">{jobs.length} jobs found — live from 10 sources</p>
+          <p className="text-xs text-[#555577]">{jobs.length} jobs found — live from 17 sources</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {jobs.map(job => (
               <Card key={job.id} hover className="flex flex-col justify-between gap-3">
