@@ -6,6 +6,8 @@
 // /api/cron/refresh-jobs route, which forces a fetch of every source at least
 // once every 24h even if nobody visits the site in between.
 
+import { unstable_cache } from 'next/cache'
+
 export interface JobItem {
   id: string
   title: string
@@ -21,7 +23,7 @@ export interface JobItem {
   salary: string
 }
 
-export const JOB_SOURCE_COUNT = 17
+export const JOB_SOURCE_COUNT = 19
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -753,6 +755,197 @@ async function parseTelegramJobs(): Promise<JobItem[]> {
   return results.flatMap(r => r.status === 'fulfilled' ? r.value : [])
 }
 
+// ── Twitter/X hiring-signal search (twitterapi.io, paid, optional) ───────────
+// Ported from workers/connectors/twitter/hiring-signals.ts. Off by default —
+// only runs once TWITTERAPI_IO_KEY is set. A tweet has no structured
+// title/company, so — same approach as the Telegram parser above — the first
+// line of the tweet becomes the title and a best-effort company guess comes
+// from it; the tweet itself is the "listing".
+
+interface TwitterApiIoTweet {
+  id: string
+  url: string
+  text: string
+  createdAt: string
+  author: { userName: string; name: string }
+}
+
+interface TwitterApiIoResponse {
+  tweets: TwitterApiIoTweet[]
+  has_next_page: boolean
+  next_cursor: string
+}
+
+const HIRING_PHRASES = ['"we\'re hiring"', '"we are hiring"', '"now hiring"', '"join our team"']
+const HIRING_TOPICS = ['web3', 'crypto', 'blockchain', 'defi', 'nft']
+
+function buildTwitterHiringQuery(): string {
+  const topicClause = `(${HIRING_TOPICS.join(' OR ')})`
+  const hiringClause = `(${HIRING_PHRASES.join(' OR ')})`
+  const sinceDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  return `${topicClause} ${hiringClause} since:${sinceDate}`
+}
+
+async function parseTwitterHiringSignals(): Promise<JobItem[]> {
+  const apiKey = process.env.TWITTERAPI_IO_KEY
+  if (!apiKey) return []
+  try {
+    const params = new URLSearchParams({ query: buildTwitterHiringQuery(), queryType: 'Latest' })
+    const res = await fetch(`https://api.twitterapi.io/twitter/tweet/advanced_search?${params}`, {
+      headers: { 'X-API-Key': apiKey },
+      // Paid per-call API — cache an hour rather than the default 15 min to bound cost.
+      next: { revalidate: 3600 },
+    })
+    if (!res.ok) return []
+    const data: TwitterApiIoResponse = await res.json()
+    const tweets = data.tweets || []
+    return tweets.map(tweet => {
+      const text = tweet.text.trim()
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+      const title = (lines[0] || text).slice(0, 100)
+      const company = extractCompanyFromTitle(title) !== 'Company'
+        ? extractCompanyFromTitle(title)
+        : (tweet.author.name || tweet.author.userName)
+      return {
+        id: `twitter_${tweet.id}`,
+        title,
+        company,
+        location: 'Remote',
+        work_type: detectWorkType(text, text, 'remote'),
+        description: text.slice(0, 350),
+        skills: extractSkillsFromText(text),
+        posted_date: tweet.createdAt ? new Date(tweet.createdAt).toISOString() : new Date().toISOString(),
+        source: `Twitter · @${tweet.author.userName}`,
+        apply_url: tweet.url,
+        sector: detectSector(text, []),
+        salary: '',
+      }
+    })
+  } catch {
+    return []
+  }
+}
+
+// ── Claude-powered live web search (Anthropic, optional, cost-capped) ────────
+// Uses the same ANTHROPIC_API_KEY already configured for CV/cover-letter
+// generation, so no new signup is needed — but a web-search-augmented model
+// call costs real money per request. `unstable_cache` (Next's persistent,
+// cross-request/cross-deployment Data Cache — distinct from the per-fetch
+// `next.revalidate` used everywhere else in this file, which doesn't reliably
+// cache POST requests) pins this to running at most once every 24h no matter
+// how many times getAllJobs() is called across all visitors and the daily
+// cron combined.
+
+interface ClaudeJobResult {
+  title: string
+  company: string
+  location?: string
+  workType?: string
+  description: string
+  sourceUrl: string
+}
+
+function extractClaudeText(data: { content?: { type?: string; text?: string }[] }): string {
+  return (data.content ?? [])
+    .filter(b => b.type === 'text' && typeof b.text === 'string')
+    .map(b => b.text)
+    .join('')
+}
+
+function parseClaudeJobResults(text: string): ClaudeJobResult[] {
+  const withoutFences = text.replace(/```(?:json)?/gi, '').trim()
+  const start = withoutFences.indexOf('[')
+  const end = withoutFences.lastIndexOf(']')
+  if (start === -1 || end === -1 || end < start) return []
+  try {
+    const parsed = JSON.parse(withoutFences.slice(start, end + 1))
+    if (!Array.isArray(parsed)) return []
+    return parsed
+      .filter((r): r is Record<string, unknown> => !!r && typeof r === 'object')
+      .map(r => ({
+        title: String(r.title || '').trim(),
+        company: String(r.company || '').trim(),
+        location: typeof r.location === 'string' ? r.location : undefined,
+        workType: typeof r.workType === 'string' ? r.workType : undefined,
+        description: String(r.description || '').trim(),
+        sourceUrl: String(r.sourceUrl || '').trim(),
+      }))
+      .filter(r => r.title && r.company && /^https?:\/\//i.test(r.sourceUrl))
+  } catch {
+    return []
+  }
+}
+
+// Errors deliberately propagate (no try/catch here) rather than resolving to
+// `[]` — unstable_cache persists whatever this function returns, so
+// swallowing a transient failure into an empty array would pin "no results"
+// in the cache for the full 24h revalidate window. getAllJobs() below calls
+// this through Promise.allSettled, which handles the rejection per-source
+// without caching it.
+async function runClaudeLiveSearch(): Promise<JobItem[]> {
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) return []
+
+  const prompt = [
+    'Use your live web search tool right now to find real, currently-open Web3/crypto job listings',
+    '— do not answer from memory. Look across company career pages, job boards, and other public',
+    'postings for open roles in engineering, marketing, community management, design, or product at',
+    'Web3/crypto companies, remote-friendly where possible.',
+    '',
+    'Find up to 12 distinct openings. For each you must have found a real, specific page during this',
+    'search — never invent a company, role, or URL. Skip anything you cannot back with an actual page.',
+    '',
+    'Respond with ONLY a JSON array (no markdown fences, no prose). Each item:',
+    '{ "title": string, "company": string, "location": string | null,',
+    '  "workType": "remote" | "hybrid" | "onsite" | "freelance" | null,',
+    '  "description": string, // one sentence on the role',
+    '  "sourceUrl": string    // the exact page URL you found this on',
+    '}',
+  ].join('\n')
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-5',
+      max_tokens: 2048,
+      messages: [{ role: 'user', content: prompt }],
+      tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 4 }],
+    }),
+  })
+  if (!res.ok) throw new Error(`Claude live search error: ${res.status}`)
+  const data = await res.json()
+  const results = parseClaudeJobResults(extractClaudeText(data))
+  const now = new Date().toISOString()
+  return results.map((r, idx) => {
+    const location = r.location || 'Remote'
+    return {
+      id: `claude_live_${idx}_${now.slice(0, 10)}`,
+      title: r.title,
+      company: r.company,
+      location,
+      work_type: r.workType || detectWorkType(r.title, r.description, /remote/i.test(location) ? 'remote' : 'onsite'),
+      description: r.description.slice(0, 300),
+      skills: extractSkillsFromText(r.title + ' ' + r.description),
+      posted_date: now,
+      source: 'Claude Live Search',
+      apply_url: r.sourceUrl,
+      sector: detectSector(r.title, []),
+      salary: '',
+    }
+  })
+}
+
+const fetchClaudeLiveJobs = unstable_cache(
+  runClaudeLiveSearch,
+  ['jobs-claude-live-search'],
+  { revalidate: 86400, tags: ['jobs-claude-live-search'] }
+)
+
 // ── Aggregate ───────────────────────────────────────────────────────────────
 
 /**
@@ -783,6 +976,8 @@ export async function getAllJobs(): Promise<JobItem[]> {
     parseGreenhouse(),
     parseLever(),
     parseAshby(),
+    parseTwitterHiringSignals(),
+    fetchClaudeLiveJobs(),
   ])
 
   let jobs: JobItem[] = results.flatMap(r => r.status === 'fulfilled' ? r.value : [])
