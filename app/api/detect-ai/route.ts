@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   if (!text) return NextResponse.json({ error: 'No text provided' }, { status: 400 })
 
   const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-sonnet-5',
     max_tokens: 1500,
     messages: [{
       role: 'user',
