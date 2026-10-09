@@ -288,7 +288,7 @@ export default function ScholarshipsPage() {
         <div className="flex gap-2 flex-wrap">
           {filterTypes.map(t => (
             <button key={t} onClick={() => setFilterType(t)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium transition-all ${
                 filterType === t ? 'bg-[#6c63ff] text-white' : 'bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35]'
               }`}>
               {t}
@@ -298,7 +298,7 @@ export default function ScholarshipsPage() {
         <div className="flex gap-2 flex-wrap">
           {filterRegions.map(r => (
             <button key={r} onClick={() => setFilterRegion(r)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium transition-all ${
                 filterRegion === r ? 'bg-[#22224a] text-white border border-[#6c63ff]' : 'bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35]'
               }`}>
               {r}

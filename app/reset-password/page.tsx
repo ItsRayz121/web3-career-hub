@@ -42,7 +42,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
+    <div className="min-h-dvh bg-[#0a0a0f] flex items-center justify-center p-4 py-[max(1rem,env(safe-area-inset-top))]">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <div className="w-12 h-12 rounded-xl bg-[#6c63ff] flex items-center justify-center mb-3">
@@ -52,7 +52,7 @@ export default function ResetPasswordPage() {
           <p className="text-sm text-[#8888aa] mt-1">Choose a strong password</p>
         </div>
 
-        <div className="bg-[#12121f] border border-[#1e1e35] rounded-xl p-6">
+        <div className="bg-[#12121f] border border-[#1e1e35] rounded-xl p-5 sm:p-6">
           {done ? (
             <div className="flex flex-col items-center text-center py-4 gap-3">
               <div className="w-12 h-12 rounded-full bg-green-900/30 flex items-center justify-center">

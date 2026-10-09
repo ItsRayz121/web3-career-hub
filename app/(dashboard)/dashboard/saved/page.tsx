@@ -81,7 +81,7 @@ export default function SavedPage() {
         <p className="text-[#8888aa] text-sm mt-1">Your generated documents and saved opportunities in one place</p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
+      <div className="flex flex-col md:flex-row gap-3 md:items-center">
         <div className="flex gap-2">
           {(['documents', 'opportunities'] as const).map(tab => (
             <button
@@ -95,7 +95,7 @@ export default function SavedPage() {
             </button>
           ))}
         </div>
-        <div className="relative flex-1 md:max-w-xs">
+        <div className="relative w-full md:flex-1 md:max-w-xs">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555577]" />
           <input
             className="w-full pl-9 pr-3 py-2 rounded-lg bg-[#12121f] border border-[#1e1e35] text-white text-sm placeholder:text-[#555577] focus:outline-none focus:border-[#6c63ff]"
@@ -117,7 +117,7 @@ export default function SavedPage() {
           <div className="space-y-3">
             {filteredDocs.map(doc => (
               <Card key={doc.id} className="group">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-medium text-white text-sm truncate">{doc.title}</h3>
@@ -133,17 +133,17 @@ export default function SavedPage() {
                     )}
                     <p className="text-xs text-[#555577] mt-0.5">Saved {formatDate(doc.created_at)}</p>
                   </div>
-                  <div className="flex gap-2 shrink-0">
+                  <div className="flex gap-2 sm:shrink-0">
                     <button onClick={() => exportPDF(doc)} title="Export as PDF"
-                      className="p-1.5 rounded-lg bg-[#1a1a2e] text-[#8888aa] hover:text-[#6c63ff] border border-[#1e1e35] transition-colors">
+                      className="p-2.5 sm:p-1.5 rounded-lg bg-[#1a1a2e] text-[#8888aa] hover:text-[#6c63ff] border border-[#1e1e35] transition-colors">
                       <FileDown size={13} />
                     </button>
                     <button onClick={() => downloadTxt(doc)} title="Download as TXT"
-                      className="p-1.5 rounded-lg bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35] transition-colors">
+                      className="p-2.5 sm:p-1.5 rounded-lg bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35] transition-colors">
                       <Download size={13} />
                     </button>
                     <button onClick={() => handleDeleteDoc(doc.id)}
-                      className="p-1.5 rounded-lg bg-[#1a1a2e] text-[#555577] hover:text-red-400 border border-[#1e1e35] transition-colors opacity-0 group-hover:opacity-100">
+                      className="p-2.5 sm:p-1.5 rounded-lg bg-[#1a1a2e] text-[#555577] hover:text-red-400 border border-[#1e1e35] transition-colors sm:opacity-0 group-hover:opacity-100">
                       <Trash2 size={13} />
                     </button>
                   </div>
@@ -167,7 +167,7 @@ export default function SavedPage() {
           <div className="space-y-3">
             {filteredOps.map(opp => (
               <Card key={opp.id} className="group">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-medium text-white text-sm truncate">{opp.title}</h3>
@@ -176,13 +176,13 @@ export default function SavedPage() {
                     </div>
                     <p className="text-xs text-[#8888aa] mt-0.5">{opp.company} • Saved {formatDate(opp.created_at)}</p>
                   </div>
-                  <div className="flex gap-2 shrink-0">
+                  <div className="flex gap-2 sm:shrink-0">
                     <a href={opp.url} target="_blank" rel="noopener noreferrer"
-                      className="p-1.5 rounded-lg bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35] transition-colors">
+                      className="p-2.5 sm:p-1.5 rounded-lg bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35] transition-colors">
                       <ExternalLink size={13} />
                     </a>
                     <button onClick={() => handleDeleteOpp(opp.id)}
-                      className="p-1.5 rounded-lg bg-[#1a1a2e] text-[#555577] hover:text-red-400 border border-[#1e1e35] transition-colors opacity-0 group-hover:opacity-100">
+                      className="p-2.5 sm:p-1.5 rounded-lg bg-[#1a1a2e] text-[#555577] hover:text-red-400 border border-[#1e1e35] transition-colors sm:opacity-0 group-hover:opacity-100">
                       <Trash2 size={13} />
                     </button>
                   </div>

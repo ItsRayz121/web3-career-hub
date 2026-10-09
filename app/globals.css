@@ -88,3 +88,30 @@ a, button { transition: all 0.15s ease; }
 .badge-interview { background: #3a2e1e; color: #fbbf24; border: 1px solid #d9770640; }
 .badge-offer { background: #1e2e3a; color: #818cf8; border: 1px solid #6366f140; }
 .badge-rejected { background: #3a1e1e; color: #f87171; border: 1px solid #dc262640; }
+
+/* ---------- Mobile responsiveness ---------- */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html, body { max-width: 100%; overflow-x: hidden; }
+body { -webkit-tap-highlight-color: transparent; }
+img, svg, video, canvas { max-width: 100%; }
+h1, h2, h3, p, a { overflow-wrap: anywhere; }
+
+/* Touch devices: no hover-only affordances, comfortable tap targets */
+@media (hover: none) {
+  .group .group-hover\:opacity-100 { opacity: 1 !important; }
+}
+@media (pointer: coarse) {
+  button, a[role="button"], select { min-height: 40px; }
+}
+
+/* iOS Safari zooms into inputs under 16px; keep them at 16px on phones */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+    font-size: 16px !important;
+  }
+  .card { padding: 1rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

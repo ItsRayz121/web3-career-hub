@@ -50,7 +50,7 @@ export default function TrackerPage() {
         <p className="text-[#8888aa] text-sm mt-1">Track every application from saved to offer — never miss a deadline</p>
       </div>
 
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
         {statuses.map(s => (
           <button key={s} onClick={() => setFilterStatus(filterStatus === s ? 'all' : s)}
             className={`rounded-lg p-3 text-center border transition-all ${filterStatus === s ? 'border-[#6c63ff] bg-[#6c63ff10]' : 'border-[#1e1e35] bg-[#12121f] hover:border-[#6c63ff30]'}`}>
@@ -62,12 +62,12 @@ export default function TrackerPage() {
 
       <div className="flex gap-2 flex-wrap">
         <button onClick={() => setFilterStatus('all')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filterStatus === 'all' ? 'bg-[#6c63ff] text-white' : 'bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35]'}`}>
+          className={`px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium transition-all ${filterStatus === 'all' ? 'bg-[#6c63ff] text-white' : 'bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35]'}`}>
           All ({opportunities.length})
         </button>
         {statuses.map(s => (
           <button key={s} onClick={() => setFilterStatus(s)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${filterStatus === s ? 'bg-[#6c63ff] text-white' : 'bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35]'}`}>
+            className={`px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${filterStatus === s ? 'bg-[#6c63ff] text-white' : 'bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35]'}`}>
             {s} ({counts[s] || 0})
           </button>
         ))}
@@ -83,7 +83,7 @@ export default function TrackerPage() {
         <div className="space-y-3">
           {filtered.map(opp => (
             <Card key={opp.id} className="group">
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-medium text-white text-sm truncate">{opp.title}</h3>
@@ -100,10 +100,10 @@ export default function TrackerPage() {
                     onBlur={e => handleNotesBlur(opp.id, e.target.value)}
                   />
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <div className="relative">
+                <div className="flex items-center gap-2 sm:shrink-0">
+                  <div className="relative flex-1 sm:flex-none">
                     <select
-                      className="appearance-none pl-3 pr-7 py-1.5 rounded-lg bg-[#1a1a2e] border border-[#1e1e35] text-white text-xs focus:outline-none focus:border-[#6c63ff] cursor-pointer"
+                      className="appearance-none w-full pl-3 pr-7 py-2 sm:py-1.5 rounded-lg bg-[#1a1a2e] border border-[#1e1e35] text-white text-xs focus:outline-none focus:border-[#6c63ff] cursor-pointer"
                       value={opp.status}
                       onChange={e => handleStatusChange(opp.id, e.target.value)}
                     >
@@ -114,11 +114,11 @@ export default function TrackerPage() {
                     <ChevronDown size={11} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#555577] pointer-events-none" />
                   </div>
                   <a href={opp.url} target="_blank" rel="noopener noreferrer"
-                    className="p-1.5 rounded-lg bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35] transition-colors">
+                    className="p-2.5 sm:p-1.5 rounded-lg bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35] transition-colors">
                     <ExternalLink size={13} />
                   </a>
                   <button onClick={() => handleDelete(opp.id)}
-                    className="p-1.5 rounded-lg bg-[#1a1a2e] text-[#555577] hover:text-red-400 border border-[#1e1e35] transition-colors opacity-0 group-hover:opacity-100">
+                    className="p-2.5 sm:p-1.5 rounded-lg bg-[#1a1a2e] text-[#555577] hover:text-red-400 border border-[#1e1e35] transition-colors sm:opacity-0 group-hover:opacity-100">
                     <Trash2 size={13} />
                   </button>
                 </div>

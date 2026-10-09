@@ -33,7 +33,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
+    <div className="min-h-dvh bg-[#0a0a0f] flex items-center justify-center p-4 py-[max(1rem,env(safe-area-inset-top))]">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <div className="w-12 h-12 rounded-xl bg-[#6c63ff] flex items-center justify-center mb-3">
@@ -43,7 +43,7 @@ export default function RegisterPage() {
           <p className="text-sm text-[#8888aa] mt-1">Start your career journey</p>
         </div>
 
-        <div className="bg-[#12121f] border border-[#1e1e35] rounded-xl p-6">
+        <div className="bg-[#12121f] border border-[#1e1e35] rounded-xl p-5 sm:p-6">
           <form onSubmit={handleRegister} className="space-y-4">
             <Input label="Email" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
             <Input label="Password" type="password" placeholder="At least 8 characters" value={password} onChange={e => setPassword(e.target.value)} minLength={8} required />

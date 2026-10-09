@@ -77,7 +77,7 @@ export default function ChatAssistant() {
       {/* Floating button */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-[#6c63ff] hover:bg-[#5a52e0] text-white flex items-center justify-center shadow-lg shadow-[#6c63ff40] transition-all hover:scale-105"
+        className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 sm:bottom-6 sm:right-6 z-[45] w-12 h-12 rounded-full bg-[#6c63ff] hover:bg-[#5a52e0] text-white flex items-center justify-center shadow-lg shadow-[#6c63ff40] transition-all hover:scale-105"
         title="Career Assistant"
       >
         {open ? <X size={20} /> : <MessageCircle size={20} />}
@@ -85,7 +85,7 @@ export default function ChatAssistant() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-20 right-6 z-50 w-80 md:w-96 flex flex-col bg-[#0f0f1a] border border-[#1e1e35] rounded-2xl shadow-2xl overflow-hidden" style={{ maxHeight: '520px' }}>
+        <div className="fixed z-[55] inset-x-0 bottom-0 top-14 sm:inset-x-auto sm:top-auto sm:bottom-20 sm:right-6 sm:w-96 sm:max-h-[min(520px,calc(100dvh-6rem))] flex flex-col bg-[#0f0f1a] border border-[#1e1e35] rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden">
           {/* Header */}
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-[#1e1e35] bg-[#12121f]">
             <div className="w-7 h-7 rounded-lg bg-[#6c63ff] flex items-center justify-center">
@@ -95,13 +95,16 @@ export default function ChatAssistant() {
               <p className="text-sm font-semibold text-white">Career Assistant</p>
               <p className="text-[10px] text-[#555577]">Powered by Claude</p>
             </div>
+            <button onClick={() => setOpen(false)} aria-label="Close assistant" className="sm:hidden ml-auto -mr-2 w-11 h-11 flex items-center justify-center rounded-lg text-[#8888aa] hover:text-white">
+              <X size={18} />
+            </button>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ maxHeight: '360px' }}>
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-3 sm:max-h-[360px]">
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] px-3 py-2 rounded-xl text-xs leading-relaxed whitespace-pre-wrap ${
+                <div className={`max-w-[85%] px-3 py-2 rounded-xl text-sm sm:text-xs break-words leading-relaxed whitespace-pre-wrap ${
                   msg.role === 'user'
                     ? 'bg-[#6c63ff] text-white rounded-br-sm'
                     : 'bg-[#1a1a2e] text-[#d0d0ee] border border-[#1e1e35] rounded-bl-sm'
@@ -129,7 +132,7 @@ export default function ChatAssistant() {
             <div className="px-3 pb-2 flex gap-1.5 flex-wrap">
               {['Improve my CV', 'Cold message template', 'Best Web3 skills to learn', 'Interview tips'].map(q => (
                 <button key={q} onClick={() => { setInput(q); setTimeout(send, 50) }}
-                  className="text-[10px] px-2 py-1 rounded-lg bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35] transition-colors">
+                  className="text-xs sm:text-[10px] px-3 py-2 sm:px-2 sm:py-1 rounded-lg bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35] transition-colors">
                   {q}
                 </button>
               ))}
@@ -137,7 +140,7 @@ export default function ChatAssistant() {
           )}
 
           {/* Input */}
-          <div className="p-3 border-t border-[#1e1e35] flex gap-2">
+          <div className="p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] border-t border-[#1e1e35] flex gap-2">
             <textarea
               ref={inputRef}
               value={input}
@@ -150,7 +153,7 @@ export default function ChatAssistant() {
             <button
               onClick={send}
               disabled={!input.trim() || loading}
-              className="w-8 h-8 rounded-lg bg-[#6c63ff] hover:bg-[#5a52e0] disabled:opacity-40 text-white flex items-center justify-center transition-colors shrink-0 self-end"
+              className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg bg-[#6c63ff] hover:bg-[#5a52e0] disabled:opacity-40 text-white flex items-center justify-center transition-colors shrink-0 self-end"
             >
               <Send size={13} />
             </button>

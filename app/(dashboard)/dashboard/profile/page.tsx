@@ -115,10 +115,10 @@ export default function ProfilePage() {
         <p className="text-[#8888aa] text-sm mt-1">Your professional profile powers all CV, resume, and cover letter generation</p>
       </div>
 
-      <div className="flex gap-1 bg-[#12121f] border border-[#1e1e35] rounded-lg p-1 flex-wrap">
+      <div className="flex gap-1 bg-[#12121f] border border-[#1e1e35] rounded-lg p-1 overflow-x-auto [&>button]:shrink-0 [&>button]:whitespace-nowrap">
         {tabs.map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === tab ? 'bg-[#6c63ff] text-white' : 'text-[#8888aa] hover:text-white'}`}>
+            className={`px-3 py-2 sm:py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === tab ? 'bg-[#6c63ff] text-white' : 'text-[#8888aa] hover:text-white'}`}>
             {tab}
           </button>
         ))}
@@ -230,7 +230,7 @@ export default function ProfilePage() {
             <Card key={ed.id}>
               <div className="flex justify-between mb-4">
                 <span className="text-sm font-medium text-[#6c63ff]">Education #{i + 1}</span>
-                <button onClick={() => setEducation(prev => prev.filter((_, idx) => idx !== i))} className="text-[#555577] hover:text-red-400"><Trash2 size={15} /></button>
+                <button onClick={() => setEducation(prev => prev.filter((_, idx) => idx !== i))} className="p-2 text-[#555577] hover:text-red-400"><Trash2 size={15} /></button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input label="Degree" value={ed.degree} onChange={e => setEducation(prev => prev.map((x, idx) => idx === i ? { ...x, degree: e.target.value } : x))} placeholder="Bachelor of Science" />
@@ -264,22 +264,22 @@ export default function ProfilePage() {
             <div className="space-y-3">
               {skills.length === 0 && <p className="text-center text-[#555577] text-sm py-4">No skills added yet.</p>}
               {skills.map((skill, i) => (
-                <div key={skill.id} className="flex gap-3 items-center">
+                <div key={skill.id} className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3 items-center">
                   <input
-                    className="flex-1 px-3 py-2 rounded-lg bg-[#0f0f1a] border border-[#1e1e35] text-white text-sm focus:outline-none focus:border-[#6c63ff]"
+                    className="w-full sm:w-auto sm:flex-1 px-3 py-2 rounded-lg bg-[#0f0f1a] border border-[#1e1e35] text-white text-sm focus:outline-none focus:border-[#6c63ff]"
                     value={skill.name}
                     onChange={e => setSkills(prev => prev.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x))}
                     placeholder="Skill name (e.g. Solidity, DeFi)"
                   />
-                  <select className="px-3 py-2 rounded-lg bg-[#0f0f1a] border border-[#1e1e35] text-white text-sm focus:outline-none focus:border-[#6c63ff]"
+                  <select className="flex-1 sm:flex-none min-w-0 px-3 py-2 rounded-lg bg-[#0f0f1a] border border-[#1e1e35] text-white text-sm focus:outline-none focus:border-[#6c63ff]"
                     value={skill.category} onChange={e => setSkills(prev => prev.map((x, idx) => idx === i ? { ...x, category: e.target.value } : x))}>
                     {['technical', 'soft', 'language', 'tool', 'blockchain', 'marketing'].map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
-                  <select className="px-3 py-2 rounded-lg bg-[#0f0f1a] border border-[#1e1e35] text-white text-sm focus:outline-none focus:border-[#6c63ff]"
+                  <select className="flex-1 sm:flex-none min-w-0 px-3 py-2 rounded-lg bg-[#0f0f1a] border border-[#1e1e35] text-white text-sm focus:outline-none focus:border-[#6c63ff]"
                     value={skill.level} onChange={e => setSkills(prev => prev.map((x, idx) => idx === i ? { ...x, level: e.target.value } : x))}>
                     {['beginner', 'intermediate', 'advanced', 'expert'].map(l => <option key={l} value={l}>{l}</option>)}
                   </select>
-                  <button onClick={() => setSkills(prev => prev.filter((_, idx) => idx !== i))} className="text-[#555577] hover:text-red-400"><Trash2 size={15} /></button>
+                  <button onClick={() => setSkills(prev => prev.filter((_, idx) => idx !== i))} className="p-2 text-[#555577] hover:text-red-400"><Trash2 size={15} /></button>
                 </div>
               ))}
             </div>
@@ -304,7 +304,7 @@ export default function ProfilePage() {
             <Card key={cert.id}>
               <div className="flex justify-between mb-4">
                 <span className="text-sm font-medium text-[#6c63ff]">Certification #{i + 1}</span>
-                <button onClick={() => setCertifications(prev => prev.filter((_, idx) => idx !== i))} className="text-[#555577] hover:text-red-400"><Trash2 size={15} /></button>
+                <button onClick={() => setCertifications(prev => prev.filter((_, idx) => idx !== i))} className="p-2 text-[#555577] hover:text-red-400"><Trash2 size={15} /></button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input label="Certificate Name" value={cert.name} onChange={e => setCertifications(prev => prev.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x))} placeholder="Certified Blockchain Developer" />
@@ -335,7 +335,7 @@ export default function ProfilePage() {
             <Card key={proj.id}>
               <div className="flex justify-between mb-4">
                 <span className="text-sm font-medium text-[#6c63ff]">Project #{i + 1}</span>
-                <button onClick={() => setProjects(prev => prev.filter((_, idx) => idx !== i))} className="text-[#555577] hover:text-red-400"><Trash2 size={15} /></button>
+                <button onClick={() => setProjects(prev => prev.filter((_, idx) => idx !== i))} className="p-2 text-[#555577] hover:text-red-400"><Trash2 size={15} /></button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input label="Project Name" value={proj.name} onChange={e => setProjects(prev => prev.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x))} placeholder="DeFi Yield Aggregator" />

@@ -168,7 +168,7 @@ export default function CollaborationsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">Collaborations</h1>
           <p className="text-[#8888aa] text-sm mt-1">Ambassador programs, community roles, KOL opportunities, and partnerships</p>
@@ -177,7 +177,7 @@ export default function CollaborationsPage() {
       </div>
 
       {/* Tab switcher */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 [&>button]:shrink-0 [&>button]:whitespace-nowrap">
         <button onClick={() => { setTab('curated'); setFilterType('all') }}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'curated' ? 'bg-[#6c63ff] text-white' : 'bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35]'}`}>
           Curated Programs ({curatedPrograms.length})
@@ -192,7 +192,7 @@ export default function CollaborationsPage() {
       <div className="flex gap-2 flex-wrap">
         {types.map(t => (
           <button key={t} onClick={() => setFilterType(t)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
+            className={`px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium transition-all capitalize ${
               filterType === t ? 'bg-[#6c63ff] text-white' : 'bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35]'
             }`}>
             {t}

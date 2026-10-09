@@ -98,7 +98,7 @@ export default function JobsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">Jobs</h1>
           <p className="text-[#8888aa] text-sm mt-1">Live opportunities from 19 global sources — remote, freelance, Pakistan &amp; worldwide</p>
@@ -131,7 +131,7 @@ export default function JobsPage() {
             <button
               key={f.value}
               onClick={() => setActiveFilter(f.value)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium transition-all ${
                 activeFilter === f.value
                   ? 'bg-[#6c63ff] text-white'
                   : 'bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35]'

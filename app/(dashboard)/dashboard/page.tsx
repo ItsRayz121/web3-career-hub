@@ -40,7 +40,7 @@ export default function DashboardPage() {
       </div>
 
       {profileComplete < 80 && (
-        <div className="bg-[#6c63ff10] border border-[#6c63ff30] rounded-xl p-4 flex items-center justify-between gap-4">
+        <div className="bg-[#6c63ff10] border border-[#6c63ff30] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-[#6c63ff20] flex items-center justify-center shrink-0">
               <Zap size={18} className="text-[#6c63ff]" />
@@ -58,7 +58,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {[
           { label: 'Profile', value: `${profileComplete}%`, icon: Target, color: '#6c63ff', href: '/dashboard/profile' },
           { label: 'Documents', value: docs.length, icon: FileText, color: '#22c55e', href: '/dashboard/saved' },
@@ -66,7 +66,7 @@ export default function DashboardPage() {
           { label: 'Jobs Live', value: '200+', icon: Briefcase, color: '#60a5fa', href: '/dashboard/jobs' },
         ].map((stat) => (
           <Link key={stat.label} href={stat.href}>
-            <Card hover className="flex items-center gap-3">
+            <Card hover className="flex items-center gap-3 !p-3 sm:!p-5">
               <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${stat.color}20` }}>
                 <stat.icon size={18} style={{ color: stat.color }} />
               </div>
@@ -120,7 +120,7 @@ export default function DashboardPage() {
         ) : (
           <div className="space-y-2">
             {recentDocs.map((doc: GeneratedDocument) => (
-              <Card key={doc.id} className="flex items-center justify-between gap-4">
+              <Card key={doc.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-8 h-8 rounded-lg bg-[#6c63ff20] flex items-center justify-center shrink-0">
                     <FileText size={14} className="text-[#6c63ff]" />
@@ -141,10 +141,10 @@ export default function DashboardPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex gap-2 shrink-0">
+                <div className="flex gap-2 sm:shrink-0">
                   <Link
                     href={`/dashboard/cover-letter?job=${encodeURIComponent(doc.job_title || '')}&company=${encodeURIComponent(doc.company_name || '')}`}
-                    className="p-1.5 rounded-lg bg-[#1a1a2e] text-[#8888aa] hover:text-[#6c63ff] border border-[#1e1e35] transition-colors text-xs px-2"
+                    className="p-1.5 rounded-lg bg-[#1a1a2e] text-[#8888aa] hover:text-[#6c63ff] border border-[#1e1e35] transition-colors text-xs px-3 py-2 sm:px-2 sm:py-1.5"
                   >
                     Cover Letter
                   </Link>

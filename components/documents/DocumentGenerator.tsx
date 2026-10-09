@@ -168,7 +168,7 @@ export default function DocumentGenerator({ type, title, description, prompts, i
                 <div className="flex flex-wrap gap-2">
                   {tones.map(t => (
                     <button key={t.value} onClick={() => setTone(t.value)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${tone === t.value ? 'bg-[#6c63ff] text-white' : 'bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35]'}`}>
+                      className={`px-3 py-2 sm:py-1.5 rounded-lg text-xs font-medium transition-all ${tone === t.value ? 'bg-[#6c63ff] text-white' : 'bg-[#1a1a2e] text-[#8888aa] hover:text-white border border-[#1e1e35]'}`}>
                       {t.label}
                     </button>
                   ))}
@@ -205,14 +205,14 @@ export default function DocumentGenerator({ type, title, description, prompts, i
           {content && (
             <>
               <Card>
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                   <Input
                     value={docTitle}
                     onChange={e => setDocTitle(e.target.value)}
                     placeholder="Document title..."
                     className="border-0 bg-transparent p-0 text-sm font-medium focus:ring-0"
                   />
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <Button variant="ghost" size="sm" onClick={() => setEditMode(m => !m)}>
                       {editMode ? <><Check size={14} /> Done</> : <><Pencil size={14} /> Edit</>}
                     </Button>
@@ -224,10 +224,10 @@ export default function DocumentGenerator({ type, title, description, prompts, i
                     </Button>
                   </div>
                 </div>
-                <div className="bg-[#0f0f1a] rounded-lg p-4 max-h-[500px] overflow-y-auto">
+                <div className="bg-[#0f0f1a] rounded-lg p-4 max-h-[60dvh] sm:max-h-[500px] overflow-y-auto">
                   {editMode ? (
                     <textarea
-                      className="w-full bg-transparent text-sm text-[#d0d0ee] whitespace-pre-wrap font-sans leading-relaxed resize-none focus:outline-none min-h-[400px]"
+                      className="w-full bg-transparent text-sm text-[#d0d0ee] whitespace-pre-wrap font-sans leading-relaxed resize-none focus:outline-none min-h-[50dvh] sm:min-h-[400px]"
                       value={content}
                       onChange={e => setContent(e.target.value)}
                     />
